@@ -12,42 +12,41 @@ def load_pokemon_csv(filepath):
     with open(filepath,mode='r') as file:
         reader = csv.DictReader(file)
         for row in reader:
-            name = row['Name']
-            type = row['Type']
-            health = int(row['Health'])
-            attack = int(row['Attack'])
-            defence = int(row['Defence'])
-            moves = row['Moves']
-            pokemon = Pokemon_Character(name,1,health,attack,defence,type,moves[0:])
-            pokemon_list.append(pokemon)
-            check_duplicates(pokemon_list)
+            name = row['Pokemon']
+            id = row['Nat']
+            type = row['Type I']
+            health = int(row['HP'])
+            attack = int(row['Atk'])
+            defence = int(row['Def'])
+            SpA = int(row['SpA'])
+            SpD = int(row['SpD'])
+            SpE = int(row['Spe'])
+            move1 = row['Move1']
+            move2 = row['Move2']
+            move3 = row['Move3']
+            move4 = row['Move4']
+            
+            if not any(pokemon.name == name for pokemon in pokemon_list):
+                pokemon = Pokemon_Character(name,id,1,health,attack,defence,type,SpA,SpD,SpE,move1,move2,move3,move4)
+                pokemon_list.append(pokemon)
     return pokemon_list
 
-def check_duplicates(pokemon_list):
-    seen_names = set()
-    duplicates = set()
-
-    for pokemon in pokemon_list:
-        if pokemon.name in seen_names:
-            duplicates.add(pokemon.name)
-        else:
-            seen_names.add(pokemon.name)
-
-    return list(duplicates)
-
 def choose_pokemon(pokemon_list):    
-    print('Choose your Pokémon:')
-    for idx, pokemon in enumerate(pokemon_list, start=1):
-        print(f"{idx}: {pokemon.name}")
+    starter_pokemon = [pokemon for pokemon in pokemon_list if pokemon.name in ['Charmander', 'Pikachu', 'Squirtle']]
+    
+    if starter_pokemon:
+        print('Choose your Pokémon:')
+        for idx, pokemon in enumerate(starter_pokemon, start=1):
+            print(f"{idx}: {pokemon.name}")
 
     while True:
         try:
             option = int(input('Enter the number you wish to capture: '))
-            if option <= 1 <= len(pokemon_list):
-                selected_pokemon = pokemon_list[option - 1]
+            if 1 <= option <= len(starter_pokemon):
+                selected_pokemon = starter_pokemon[option - 1]
                 print(f'You have selected {selected_pokemon.name}')
                 stored_pokemon.append(selected_pokemon)
-                return selected_pokemon, pokemon_list 
+                return selected_pokemon 
             else:
                 print("Invalid option, please choose 1, 2, or 3.")
         except ValueError:
@@ -71,17 +70,17 @@ def display_health_bar(pokemon):
     bar = '█' * filled_length + '-' * (bar_length - filled_length)
     print(f"{pokemon.name}: |{bar}| {pokemon.health}/{pokemon.max_health}")
 
-def player_ability_menu(player_pokemon, opponent_pokemon):
-    abilities = player_pokemon.abilities[player_pokemon.pokemon_type]
+def player_ability_menu(player_pokemon, opponent_pokemon,type_advantage,type_disadvantage):
+    abilities = player_pokemon.abilities
     for idx, ability in enumerate(abilities, start=1):
-        print(f"{idx}: {ability['name']}")
+        print(f"{idx}: {ability}")
     try:
         choose_ability = int(input('Choose Your Ability: '))
             
         if 1 <= choose_ability <= len(abilities):
             selected_ability = abilities[choose_ability - 1]
                 
-            player_pokemon.use_ability(opponent_pokemon, selected_ability)
+            player_pokemon.use_ability(opponent_pokemon, selected_ability,type_advantage,type_disadvantage)
             display_health_bar(player_pokemon)
                 
             if opponent_pokemon.health <= 0:
@@ -95,11 +94,11 @@ def player_ability_menu(player_pokemon, opponent_pokemon):
 
     return False
 
-def opponent_ability_menu(opponent_pokemon, player_pokemon):
-    abilities = opponent_pokemon.abilities[opponent_pokemon.pokemon_type]
+def opponent_ability_menu(opponent_pokemon, player_pokemon,type_advantage,type_disadvantage):
+    abilities = opponent_pokemon.abilities
     choose_ability = random.randint(1, len(abilities))
     selected_ability = abilities[choose_ability - 1]   
-    opponent_pokemon.use_ability(player_pokemon,selected_ability)
+    opponent_pokemon.use_ability(player_pokemon,selected_ability,type_advantage,type_disadvantage)
     display_health_bar(opponent_pokemon)
 
     if player_pokemon.health <= 0:
@@ -108,7 +107,7 @@ def opponent_ability_menu(opponent_pokemon, player_pokemon):
 
     return False
 
-def attack_menu(player_pokemon, opponent_pokemon):
+def attack_menu(player_pokemon, opponent_pokemon,type_advantage, type_disadvantage):
     while player_pokemon.health > 0 and opponent_pokemon.health > 0:
         print("\nYour options:")
         menu = ['Attack', 'Use Item', 'Catch with Pokeball', 'Run']
@@ -118,20 +117,20 @@ def attack_menu(player_pokemon, opponent_pokemon):
 
         if choose == 1:
             if player_pokemon.health > 0:
-                if player_ability_menu(player_pokemon, opponent_pokemon):
+                if player_ability_menu(player_pokemon, opponent_pokemon,type_advantage,type_disadvantage):
                     break
             if opponent_pokemon.health > 0:
-                if opponent_ability_menu(opponent_pokemon, player_pokemon):
+                if opponent_ability_menu(opponent_pokemon, player_pokemon,type_advantage,type_disadvantage):
                     break
         elif choose == 2:
             use_item(player_pokemon)
             if opponent_pokemon.health > 0:
-                opponent_ability_menu(opponent_pokemon, player_pokemon)
+                opponent_ability_menu(opponent_pokemon, player_pokemon,type_advantage,type_disadvantage)
         elif choose == 3:
             if catch_pokemon(opponent_pokemon):
                 break  
             if opponent_pokemon.health > 0:
-                opponent_ability_menu(opponent_pokemon, player_pokemon)
+                opponent_ability_menu(opponent_pokemon, player_pokemon,type_advantage,type_disadvantage)
         elif choose == 4:
             print("You ran away from the battle!")
             break
@@ -184,14 +183,15 @@ def catch_pokemon(opponent_pokemon):
 
 class Game:
     def run(self):
-        pokemon_list = load_pokemon_csv('Pokemon_with_moves.csv')
+        pokemon_list = load_pokemon_csv('Pokemon_data.csv')
+        type_advantage, type_disadvantage = Pokemon_Character.load_type_advantages('Effective_Against.csv','Not_Effective_Against.csv')
         # Choose the player's Pokémon
-        selected_pokemon, pokemon_list = choose_pokemon(pokemon_list)
+        selected_pokemon = choose_pokemon(pokemon_list)
         # Choose the opponent's Pokémon
         opponent_pokemon = choose_opponent(pokemon_list, selected_pokemon)
         # Fight each other
         if opponent_pokemon:
-            attack_menu(selected_pokemon, opponent_pokemon)
+            attack_menu(selected_pokemon, opponent_pokemon, type_advantage, type_disadvantage)
 
 if __name__ == "__main__":
     game = Game()
