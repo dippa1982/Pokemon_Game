@@ -21,23 +21,23 @@ class Pokemon_Character:
 
     def use_ability(self, target, selected_ability, type_advantage, type_disadvantage):
         base_damage = self.attack
-        
-        # Check type advantage
         if target.type in type_advantage.get(self.type, {}).get('strong_against', []):
-            print(type_advantage)
-            print(f"{self.name} is strong against {target.name} (Type I).")
+            print(f"{self.name} is strong against {target.name}")
             base_damage *= 2
         elif target.type in type_disadvantage.get(self.type, {}).get('weak_against', []):
-            print(type_disadvantage)
-            print(f"{self.name} is weak against {target.name} (Type I).")
+            print(f"{self.name} is weak against {target.name}")
             base_damage *= 0.5
         
         # Final damage calculation
-        total_damage = int(base_damage - self.defence)
-        print(f"{self.name} uses {selected_ability} on {target.name}. It deals {total_damage:.2f} damage!")
+        random_damage = random.randint(1,50)
+        total_damage = int(base_damage - target.defence + random_damage)
+        if total_damage < 0:
+            total_damage = 0
+        if total_damage >= target.health:
+            total_damage = target.health
+        print(f"{self.name} uses {selected_ability} on {target.name}. It deals {total_damage} damage!")
         
         target.health -= total_damage
-        target.health = max(0, target.health)
         print(f"{target.name}'s remaining health: {target.health}/{target.max_health}")
 
     @staticmethod
