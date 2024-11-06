@@ -20,24 +20,23 @@ class Pokemon_Character:
         self.abilities = [move1, move2, move3, move4]
 
     def use_ability(self, target, selected_ability, type_advantage, type_disadvantage):
-        base_damage = self.attack
+        raw_dmg = 0
+        raw_dmg = ((self.attack / target.defence) * 25)
+
         if target.type in type_advantage.get(self.type, {}).get('strong_against', []):
             print(f"{self.name} is strong against {target.name}")
-            base_damage *= 2
+            raw_dmg *= 2
         elif target.type in type_disadvantage.get(self.type, {}).get('weak_against', []):
             print(f"{self.name} is weak against {target.name}")
-            base_damage *= 0.5
+            raw_dmg *= 0.5
         
-        # Final damage calculation
-        random_damage = random.randint(1,50)
-        total_damage = int(base_damage - target.defence + random_damage)
-        if total_damage < 0:
-            total_damage = 0
-        if total_damage >= target.health:
-            total_damage = target.health
-        print(f"{self.name} uses {selected_ability} on {target.name}. It deals {total_damage} damage!")
+        final_dmg = round(raw_dmg * (random.randint(80,120)) / 100)
+        print(f"{self.name} uses {selected_ability} on {target.name}. It deals {final_dmg} damage!")
         
-        target.health -= total_damage
+        target.health -= final_dmg
+        if final_dmg > target.health:
+            target.health = 0
+            target.is_alive = False
         print(f"{target.name}'s remaining health: {target.health}/{target.max_health}")
 
     @staticmethod
@@ -64,3 +63,36 @@ class Pokemon_Character:
                 type_disadvantage[poke_type] = {'weak_against': disadvantages}
 
         return type_advantage, type_disadvantage
+    
+    @staticmethod
+    def evolution_data(filepath):
+        starter_pokemon = []
+        first_evo = []
+        second_evo = []
+        with open(filepath, mode='r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                starter = row['Starter']
+                first_evolution = row['First_Evo']
+                second_evolution = row['Second_Evo']
+                starter_pokemon.append(starter)
+                first_evo.append(first_evolution)
+                second_evo.append(second_evolution)
+        return starter_pokemon, first_evo, second_evo
+    
+    def level_up(self):
+        self.level += 1
+        self.xp = 0
+        self.xp_to_level += 10
+        self.max_health += 10
+        self.health = self.max_health
+        self.attack += 1
+        self.defence += 1
+        self.SpA += 1
+        self.SpD += 1
+        self.Spe += 1
+
+    def gain_xp(self, xp):
+        self.xp += xp
+        if self.xp >= self.xp_to_level:
+            self.level_up()

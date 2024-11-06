@@ -23,10 +23,9 @@ def print_letter_by_letter(text, delay=0.05):
         sys.stdout.flush()
         time.sleep(delay)
     print()
-
+        
 def load_pokemon_csv(filepath):
     pokemon_list = []
-
     with open(filepath,mode='r') as file:
         reader = csv.DictReader(file)
         for row in reader:
@@ -42,12 +41,25 @@ def load_pokemon_csv(filepath):
             move1 = row['Move1']
             move2 = row['Move2']
             move3 = row['Move3']
-            move4 = row['Move4']
+            move4 = row['Move4'] 
             
             if not any(pokemon.name == name for pokemon in pokemon_list):
                 pokemon = Pokemon_Character(name,id,1,health,attack,defence,type,SpA,SpD,SpE,move1,move2,move3,move4)
                 pokemon_list.append(pokemon)
     return pokemon_list
+
+def print_player_details(player_pokemon):
+    details = (
+        f"Name: {player_pokemon.name}\n"
+        f"Type: {player_pokemon.type}\n"
+        f"Level: {player_pokemon.level}\n"
+        f"Health: {player_pokemon.health}\n"
+        f"Attack: {player_pokemon.attack}\n"
+        f"Defence: {player_pokemon.defence}\n"
+        f"Special Attack: {player_pokemon.SpA}\n"
+        f"Special Defence: {player_pokemon.SpD}\n"
+    )
+    return details
 
 def choose_pokemon(pokemon_list):    
     starter_pokemon = [pokemon for pokemon in pokemon_list if pokemon.name in ['Charmander', 'Pikachu', 'Squirtle']]
@@ -64,23 +76,23 @@ def choose_pokemon(pokemon_list):
             if 1 <= option <= len(starter_pokemon):
                 selected_pokemon = starter_pokemon[option - 1]
                 clear_screen()
-                print_letter_by_letter(f'You have selected {selected_pokemon.name}: {selected_pokemon.type}\nHealth:{selected_pokemon.health}\nAttack:{selected_pokemon.attack}\nDefence:{selected_pokemon.defence}')
+                details = print_player_details(selected_pokemon)
+                print_letter_by_letter(details)
                 return selected_pokemon 
             else:
                 print("Invalid option, please choose 1, 2, or 3.")
         except ValueError:
             print("Invalid input, please enter a number.")
 
-def choose_opponent(pokemon_list, player_pokemon):
-    opponent_options = [pokemon for pokemon in pokemon_list if pokemon != player_pokemon]
-    
-    if not opponent_options:
-        print("No available Pokémon for the opponent.")
-        return None
-    
-    opponent = random.choice(opponent_options)
-    print_letter_by_letter(f'Wild {opponent.name} Appears')
-    return opponent
+def choose_starter_opponent(starter_pokemon):
+    while True:
+        opponent_name = random.choice(starter_pokemon)
+        for pokemon in game.pokemon_list:
+            if pokemon.name == opponent_name:
+                print_letter_by_letter(f"A wild {pokemon.name} appeared!")
+                details = print_player_details(pokemon)
+                print_letter_by_letter(details)
+                return pokemon
 
 def display_health_bar(pokemon):
     bar_length = 20
@@ -112,43 +124,54 @@ def player_ability_menu(player_pokemon, opponent_pokemon,type_advantage,type_dis
 
     return False
 
-def opponent_ability_menu(opponent_pokemon, player_pokemon,type_advantage,type_disadvantage):
+def opponent_ability_menu(opponent_pokemon, player_pokemon, type_advantage, type_disadvantage):
     abilities = opponent_pokemon.abilities
     choose_ability = random.randint(1, len(abilities))
-    selected_ability = abilities[choose_ability - 1]   
-    opponent_pokemon.use_ability(player_pokemon,selected_ability,type_advantage,type_disadvantage)
+    selected_ability = abilities[choose_ability - 1]
+    opponent_pokemon.use_ability(player_pokemon, selected_ability, type_advantage, type_disadvantage)
     display_health_bar(player_pokemon)
 
     if player_pokemon.health <= 0:
         print_letter_by_letter(f"{player_pokemon.name} has fainted!")
-        game.stored_pokemon.remove(player_pokemon)
+        if player_pokemon in game.stored_pokemon:
+            game.stored_pokemon.remove(player_pokemon)
         if len(game.stored_pokemon) < 1:
             print_letter_by_letter("No More Pokemon, Game Over")
-            return False
-        return True
+            return True
+        return False
 
-def attack_menu(player_pokemon, opponent_pokemon,type_advantage, type_disadvantage):
-    while player_pokemon.health > 0 and opponent_pokemon.health > 0:
+def attack_menu(player_pokemon, opponent_pokemon, type_advantage, type_disadvantage, starter_pokemon):
+    while player_pokemon.health > 0:
         print_letter_by_letter("\nYour options:")
-        menu = ['Attack','Check Stored Pokemon', 'Use Item', 'Catch with Pokeball', 'Run']
+        menu = ['Attack', 'Check Stored Pokemon', 'Use Item', 'Catch with Pokeball', 'Run']
         for idx, option in enumerate(menu, start=1):
             print_letter_by_letter(f"{idx}: {option}")
-        choose = int(input("Enter your option: "))        
-
+        choose = int(input("Enter your option: "))
+        
         if choose == 1:
             if player_pokemon.health > 0:
                 clear_screen()
-                print_letter_by_letter("\nYour options:")
-                if player_ability_menu(player_pokemon, opponent_pokemon,type_advantage,type_disadvantage):
-                    if opponent_pokemon.health < 0:
-                        print_letter_by_letter(f"{opponent_pokemon.name} has fainted!")
-                        new_opponent = choose_opponent(game.pokemon_list, player_pokemon)
-                        if new_opponent:
-                            opponent_pokemon = new_opponent
-                            print_letter_by_letter(f"A new opponent, {opponent_pokemon.name}, has appeared!")
-                        else:
-                            print_letter_by_letter("No more opponents left. You win!")
-                            return  # End the game
+                print_letter_by_letter("Your options:")
+                player_ability_menu(player_pokemon, opponent_pokemon, type_advantage, type_disadvantage)
+                if opponent_pokemon.health <= 0:
+                    player_pokemon.xp += random.randint(10,50)
+                    print_letter_by_letter(f"{player_pokemon.name} gained {player_pokemon.xp} XP!")
+                    if player_pokemon.xp >= player_pokemon.xp_to_level:
+                        player_pokemon.level_up()
+                        print_letter_by_letter(f"{player_pokemon.name} has leveled up to level {player_pokemon.level}!")
+                        print_letter_by_letter(f"{player_pokemon.name}'s stats have increased!")
+                        print_letter_by_letter(f"Health: {player_pokemon.max_health}")
+                        print_letter_by_letter(f"Attack: {player_pokemon.attack}")
+                        print_letter_by_letter(f"Defence: {player_pokemon.defence}")
+                        print_letter_by_letter(f"Special Attack: {player_pokemon.SpA}")
+                        print_letter_by_letter(f"Special Defence: {player_pokemon.SpD}")
+                    new_opponent = choose_starter_opponent(starter_pokemon)
+                    if new_opponent:
+                        opponent_pokemon = new_opponent
+                        attack_menu(player_pokemon, opponent_pokemon, type_advantage, type_disadvantage, starter_pokemon)
+                    else:
+                        print_letter_by_letter("No more opponents left. You win!")
+                        return
                 if opponent_pokemon and opponent_pokemon.health > 0:
                     opponent_ability_menu(opponent_pokemon, player_pokemon, type_advantage, type_disadvantage)
 
@@ -159,19 +182,19 @@ def attack_menu(player_pokemon, opponent_pokemon,type_advantage, type_disadvanta
             clear_screen()
             use_item(player_pokemon)
             if opponent_pokemon.health > 0:
-                opponent_ability_menu(opponent_pokemon, player_pokemon,type_advantage,type_disadvantage)
+                opponent_ability_menu(opponent_pokemon, player_pokemon, type_advantage, type_disadvantage)
         
         elif choose == 4:
             clear_screen()
             if catch_pokemon(opponent_pokemon):
-                return True 
+                return True
             if opponent_pokemon.health > 0:
                 opponent_ability_menu(opponent_pokemon, player_pokemon, type_advantage, type_disadvantage)
         
         elif choose == 5:
             clear_screen()
             print_letter_by_letter("You ran away from the battle!")
-            new_opponent = choose_opponent(game.pokemon_list, player_pokemon)
+            new_opponent = choose_starter_opponent(starter_pokemon)
             if new_opponent:
                 opponent_pokemon = new_opponent
         else:
@@ -231,7 +254,7 @@ class Game:
     def __init__(self):
         self.stored_pokemon = []
         self.first_run = True
-        self.pokemon_list = load_pokemon_csv('Pokemon_data.csv')
+        self.pokemon_list = load_pokemon_csv('data/Pokemon_data.csv')
 
     def run(self):
         if self.first_run:
@@ -240,13 +263,27 @@ class Game:
             self.first_run = False
         else:
             selected_pokemon = self.stored_pokemon[0]
+        #Check if level up
+        if selected_pokemon.xp > 100:
+            selected_pokemon.level_up()
         #Load type advantages
-        type_advantage, type_disadvantage = Pokemon_Character.load_type_advantages('Effective_Against.csv','Not_Effective_Against.csv')
+        type_advantage, type_disadvantage = Pokemon_Character.load_type_advantages('data/Effective_Against.csv','data/Not_Effective_Against.csv')
+        #Load Evo Data
+        evolution_data = 'data\Evo_data.csv'
+        starter_pokemon, first_evo, second_evo = Pokemon_Character.evolution_data(evolution_data)
+        if not starter_pokemon:
+            print("No starter Pokémon found in the data file.")
+            return
         # Choose the opponent's Pokémon
-        opponent_pokemon = choose_opponent(self.pokemon_list, selected_pokemon)
+        if selected_pokemon.level < 10:
+            opponent_pokemon = choose_starter_opponent(starter_pokemon)
+        elif selected_pokemon.level >= 10 and selected_pokemon.level < 20:
+            opponent_pokemon = choose_starter_opponent(first_evo)
+        elif selected_pokemon.level >= 20:
+            opponent_pokemon = choose_starter_opponent(second_evo)
         # Fight each other
         if opponent_pokemon:
-            attack_menu(selected_pokemon, opponent_pokemon, type_advantage, type_disadvantage)
+            attack_menu(selected_pokemon, opponent_pokemon, type_advantage, type_disadvantage, starter_pokemon)
 
 if __name__ == "__main__":
     running = True
