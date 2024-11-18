@@ -1,8 +1,9 @@
 import random
 import csv
+import time
 
 class Pokemon_Character:
-    def __init__(self, name, id, level, health, attack, defence, type, SpA, SpD, Spe, move1, move2, move3, move4) -> None:
+    def __init__(self, name, id, level, health, attack, defence, type, SpA, SpD, Spe, move1, move2, move3, move4, effect=None, app_context=None) -> None:
         self.name = name
         self.id = id
         self.health = health
@@ -18,26 +19,34 @@ class Pokemon_Character:
         self.xp = 0
         self.xp_to_level = 10
         self.abilities = [move1, move2, move3, move4]
+        self.effect = effect
+        self.app_context = app_context
 
     def use_ability(self, target, selected_ability, type_advantage, type_disadvantage):
         raw_dmg = 0
         raw_dmg = ((self.attack / target.defence) * 25)
 
         if target.type in type_advantage.get(self.type, {}).get('strong_against', []):
-            print(f"{self.name} is strong against {target.name}")
+            self.app_context.txtBox.insert("end", f"{self.name} is strong against {target.name}\n")
             raw_dmg *= 2
         elif target.type in type_disadvantage.get(self.type, {}).get('weak_against', []):
-            print(f"{self.name} is weak against {target.name}")
+            self.app_context.txtBox.insert("end", f"{self.name} is weak against {target.name}\n")
             raw_dmg *= 0.5
+        elif target.type == self.type:
+            self.app_context.txtBox.insert("end", f"{self.name} and {target.name} have the same type!\n")
+            raw_dmg *= 1.5
         
-        final_dmg = round(raw_dmg * (random.randint(80,120)) / 100)
-        print(f"{self.name} uses {selected_ability} on {target.name}. It deals {final_dmg} damage!")
-        
+        modifier = raw_dmg  * random.uniform(0.85, 1.0)
+        final_dmg = round(((2*self.level / 5 + 2) * (self.attack) / (target.defence * 50) / 50 + 2) * modifier)
+        self.app_context.txtBox.insert("end", f"\n{self.name} uses {selected_ability} on {target.name}. It deals {final_dmg} damage!\n")
+        time.sleep(1)
+
         target.health -= final_dmg
         if final_dmg > target.health:
             target.health = 0
             target.is_alive = False
-        print(f"{target.name}'s remaining health: {target.health}/{target.max_health}")
+        self.app_context.txtBox.insert("end", f"\n{target.name}'s remaining health: {target.health}/{target.max_health}\n")
+        time.sleep(1)
 
     @staticmethod
     def load_type_advantages(advantage_filename, disadvantage_filename):
