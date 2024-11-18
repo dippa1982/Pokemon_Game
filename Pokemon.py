@@ -27,25 +27,25 @@ class Pokemon_Character:
         raw_dmg = ((self.attack / target.defence) * 25)
 
         if target.type in type_advantage.get(self.type, {}).get('strong_against', []):
-            self.app_context.txtBox.insert("end", f"{self.name} is strong against {target.name}\n")
+            self.app_context.txt_Box_3.insert("end", f"{self.name} is strong against {target.name}\n")
             raw_dmg *= 2
         elif target.type in type_disadvantage.get(self.type, {}).get('weak_against', []):
-            self.app_context.txtBox.insert("end", f"{self.name} is weak against {target.name}\n")
+            self.app_context.txt_Box_3.insert("end", f"{self.name} is weak against {target.name}\n")
             raw_dmg *= 0.5
         elif target.type == self.type:
-            self.app_context.txtBox.insert("end", f"{self.name} and {target.name} have the same type!\n")
+            self.app_context.txt_Box_3.insert("end", f"{self.name} and {target.name} have the same type!\n")
             raw_dmg *= 1.5
         
         modifier = raw_dmg  * random.uniform(0.85, 1.0)
         final_dmg = round(((2*self.level / 5 + 2) * (self.attack) / (target.defence * 50) / 50 + 2) * modifier)
-        self.app_context.txtBox.insert("end", f"\n{self.name} uses {selected_ability} on {target.name}. It deals {final_dmg} damage!\n")
+        self.app_context.txt_Box_3.insert("end", f"\n{self.name} uses {selected_ability} on {target.name}. It deals {final_dmg} damage!\n")
         time.sleep(1)
 
         target.health -= final_dmg
         if final_dmg > target.health:
             target.health = 0
             target.is_alive = False
-        self.app_context.txtBox.insert("end", f"\n{target.name}'s remaining health: {target.health}/{target.max_health}\n")
+        self.app_context.txt_Box_3.insert("end", f"\n{target.name}'s remaining health: {target.health}/{target.max_health}\n")
         time.sleep(1)
 
     @staticmethod

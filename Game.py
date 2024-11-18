@@ -51,7 +51,7 @@ class Game():
         self.selected_pokemon = pokemon
         self.stored_pokemon.append(pokemon)
         window.destroy()
-        self.app_context.txt_Box_3.insert("end", f"You selected {pokemon.name}!\n")
+        self.app_context.txt_Box_3.insert("end", f"You selected {pokemon.name}!")
 
     def choose_opponent(self):
         self.opponent_pokemon = random.choice(self.pokemon_list)
@@ -72,13 +72,13 @@ class Game():
             widget.destroy()
 
         Label(self.app_context.attack_Frame, text="Select an attack:").pack(pady=5)
-        for move in player_pokemon.abilities:
+        for i, move in enumerate(player_pokemon.abilities):
             if move:
                 Button(
                     self.app_context.attack_Frame,
                     text=move,
                     command=lambda m=move: self.execute_move(player_pokemon, opponent_pokemon, m)
-                ).pack(pady=5)
+                ).grid(row=1,column=i,padx=5, pady=5)
 
     def start_battle(self):
         """Set up the opponent and display available moves for battle."""
