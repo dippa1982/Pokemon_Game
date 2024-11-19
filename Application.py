@@ -41,7 +41,7 @@ class Application(Frame):
         self.button_frame.grid(row=1, column=0, padx=10, pady=10)
         self.image_frame.grid(row=2, column=0, padx=10, pady=10)
         self.health_Frame.grid(row=3, column=0, padx=10, pady=10)
-        self.attack_Frame.grid(row=4, column=0, padx=10, pady=10)
+        self.attack_Frame.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
         self.txt_Box_1.grid(row=2, column=0, sticky='w')
         self.txt_Box_2.grid(row=2, column=1, sticky='e', padx=10)
         self.txt_Box_3.grid(row=4, column=0, sticky='e')

@@ -2,7 +2,7 @@ import random
 import csv
 import os
 import time
-from tkinter import Toplevel, Label, Button, Tk, messagebox
+from tkinter import Toplevel, Label, Button, Tk, messagebox, LEFT
 from Pokemon import Pokemon_Character
 
 def load_pokemon_csv(filepath, app_context):
@@ -72,13 +72,13 @@ class Game():
             widget.destroy()
 
         Label(self.app_context.attack_Frame, text="Select an attack:").pack(pady=5)
-        for i, move in enumerate(player_pokemon.abilities):
+        for move in player_pokemon.abilities:
             if move:
                 Button(
                     self.app_context.attack_Frame,
                     text=move,
                     command=lambda m=move: self.execute_move(player_pokemon, opponent_pokemon, m)
-                ).grid(row=1,column=i,padx=5, pady=5)
+                ).pack(padx=5,pady=5)
 
     def start_battle(self):
         """Set up the opponent and display available moves for battle."""
